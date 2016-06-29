@@ -89,29 +89,29 @@ import static java.util.concurrent.TimeUnit.MILLISECONDS;
 import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class JettyHttpClient
-        implements com.proofpoint.http.client.HttpClient
+implements com.proofpoint.http.client.HttpClient
 {
     private static final String[] DISABLED_CIPHERS = {
-            "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
-            "TLS_ECDH_RSA_WITH_RC4_128_SHA",
-            "SSL_RSA_WITH_RC4_128_MD5",
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
-            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
-            "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
-            "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
-            "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
-            "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
-            "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
-            "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
+        "TLS_ECDHE_ECDSA_WITH_RC4_128_SHA",
+        "TLS_ECDHE_RSA_WITH_RC4_128_SHA",
+        "SSL_RSA_WITH_RC4_128_SHA",
+        "TLS_ECDH_ECDSA_WITH_RC4_128_SHA",
+        "TLS_ECDH_RSA_WITH_RC4_128_SHA",
+        "SSL_RSA_WITH_RC4_128_MD5",
+        "TLS_DHE_RSA_WITH_AES_256_CBC_SHA256",
+        "TLS_DHE_DSS_WITH_AES_256_CBC_SHA256",
+        "TLS_DHE_RSA_WITH_AES_256_CBC_SHA",
+        "TLS_DHE_DSS_WITH_AES_256_CBC_SHA",
+        "TLS_DHE_RSA_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_DSS_WITH_AES_128_CBC_SHA256",
+        "TLS_DHE_RSA_WITH_AES_128_CBC_SHA",
+        "TLS_DHE_DSS_WITH_AES_128_CBC_SHA",
+        "TLS_DHE_RSA_WITH_AES_256_GCM_SHA384",
+        "TLS_DHE_DSS_WITH_AES_256_GCM_SHA384",
+        "TLS_DHE_RSA_WITH_AES_128_GCM_SHA256",
+        "TLS_DHE_DSS_WITH_AES_128_GCM_SHA256",
+        "SSL_DHE_RSA_WITH_3DES_EDE_CBC_SHA",
+        "SSL_DHE_DSS_WITH_3DES_EDE_CBC_SHA",
     };
 
     private static final AtomicLong nameCounter = new AtomicLong();
@@ -193,15 +193,15 @@ public class JettyHttpClient
 
         if (config.getMaxRequestsQueuedPerDestination() == 0) {
             httpClient = new HttpClient(
-                    new HttpClientTransportOverHTTP(2)
+                new HttpClientTransportOverHTTP(2)
+                {
+                    @Override
+                    public HttpDestination newHttpDestination(Origin origin)
                     {
-                        @Override
-                        public HttpDestination newHttpDestination(Origin origin)
-                        {
-                            return new LimitQueuedToAvailableConnectionsHttpDestination(config.getMaxConnectionsPerServer(), getHttpClient(), origin);
-                        }
-                    },
-                    sslContextFactory);
+                        return new LimitQueuedToAvailableConnectionsHttpDestination(config.getMaxConnectionsPerServer(), getHttpClient(), origin);
+                    }
+                },
+                sslContextFactory);
             httpClient.setMaxRequestsQueuedPerDestination(config.getMaxConnectionsPerServer());
         }
         else {
@@ -262,74 +262,74 @@ public class JettyHttpClient
         this.requestFilters = ImmutableList.copyOf(requestFilters);
 
         this.activeConnectionsPerDestination = new ConnectionPoolDistribution(httpClient,
-                 (distribution, connectionPool) -> distribution.add(connectionPool.getActiveConnections().size()));
+           (distribution, connectionPool) -> distribution.add(connectionPool.getActiveConnections().size()));
 
-         this.idleConnectionsPerDestination = new ConnectionPoolDistribution(httpClient,
-                 (distribution, connectionPool) -> distribution.add(connectionPool.getIdleConnections().size()));
+        this.idleConnectionsPerDestination = new ConnectionPoolDistribution(httpClient,
+           (distribution, connectionPool) -> distribution.add(connectionPool.getIdleConnections().size()));
 
-         this.queuedRequestsPerDestination = new DestinationDistribution(httpClient,
-                 (distribution, destination) -> distribution.add(destination.getHttpExchanges().size()));
+        this.queuedRequestsPerDestination = new DestinationDistribution(httpClient,
+           (distribution, destination) -> distribution.add(destination.getHttpExchanges().size()));
 
-         this.currentQueuedTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
-             long started = listener.getRequestStarted();
-             if (started == 0) {
-                 started = now;
-             }
-             distribution.add(NANOSECONDS.toMillis(started - listener.getCreated()));
-         });
+        this.currentQueuedTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
+           long started = listener.getRequestStarted();
+           if (started == 0) {
+               started = now;
+           }
+           distribution.add(NANOSECONDS.toMillis(started - listener.getCreated()));
+       });
 
-         this.currentRequestTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
-             long started = listener.getRequestStarted();
-             if (started == 0) {
-                 return;
-             }
-             long finished = listener.getResponseFinished();
-             if (finished == 0) {
-                 finished = now;
-             }
-             distribution.add(NANOSECONDS.toMillis(finished - started));
-         });
+        this.currentRequestTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
+           long started = listener.getRequestStarted();
+           if (started == 0) {
+               return;
+           }
+           long finished = listener.getResponseFinished();
+           if (finished == 0) {
+               finished = now;
+           }
+           distribution.add(NANOSECONDS.toMillis(finished - started));
+       });
 
-         this.currentRequestSendTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
-             long started = listener.getRequestStarted();
-             if (started == 0) {
-                 return;
-             }
-             long requestSent = listener.getRequestFinished();
-             if (requestSent == 0) {
-                 requestSent = now;
-             }
-             distribution.add(NANOSECONDS.toMillis(requestSent - started));
-         });
+        this.currentRequestSendTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
+           long started = listener.getRequestStarted();
+           if (started == 0) {
+               return;
+           }
+           long requestSent = listener.getRequestFinished();
+           if (requestSent == 0) {
+               requestSent = now;
+           }
+           distribution.add(NANOSECONDS.toMillis(requestSent - started));
+       });
 
-         this.currentResponseWaitTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
-             long requestSent = listener.getRequestFinished();
-             if (requestSent == 0) {
-                 return;
-             }
-             long responseStarted = listener.getResponseStarted();
-             if (responseStarted == 0) {
-                 responseStarted = now;
-             }
-             distribution.add(NANOSECONDS.toMillis(responseStarted - requestSent));
-         });
+        this.currentResponseWaitTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
+           long requestSent = listener.getRequestFinished();
+           if (requestSent == 0) {
+               return;
+           }
+           long responseStarted = listener.getResponseStarted();
+           if (responseStarted == 0) {
+               responseStarted = now;
+           }
+           distribution.add(NANOSECONDS.toMillis(responseStarted - requestSent));
+       });
 
-         this.currentResponseProcessTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
-             long responseStarted = listener.getResponseStarted();
-             if (responseStarted == 0) {
-                 return;
-             }
-             long finished = listener.getResponseFinished();
-             if (finished == 0) {
-                 finished = now;
-             }
-             distribution.add(NANOSECONDS.toMillis(finished - responseStarted));
-         });
+        this.currentResponseProcessTime = new RequestDistribution(httpClient, (distribution, listener, now) -> {
+           long responseStarted = listener.getResponseStarted();
+           if (responseStarted == 0) {
+               return;
+           }
+           long finished = listener.getResponseFinished();
+           if (finished == 0) {
+               finished = now;
+           }
+           distribution.add(NANOSECONDS.toMillis(finished - responseStarted));
+       });
     }
 
     @Override
     public <T, E extends Exception> T execute(Request request, ResponseHandler<T, E> responseHandler)
-            throws E
+    throws E
     {
         long requestStart = System.nanoTime();
         AtomicLong bytesWritten = new AtomicLong(0);
@@ -434,6 +434,20 @@ public class JettyHttpClient
         return request;
     }
 
+    interface MathOperation {
+        int operation(int a, int b);
+    }
+
+    private void myFunction(){
+        JettyHttpClient j = new JettyHttpClient();
+          //with out type declaration
+        MathOperation subtraction = (a, b) -> a - b;  
+        System.out.println("10 - 5 = " + j.operate(10, 5, subtraction));
+    }
+
+    private int operate(int a, int b, MathOperation mathOperation) {
+        return mathOperation.operation(a, b);
+    }
     private HttpRequest buildJettyRequest(Request finalRequest, AtomicLong bytesWritten)
     {
         HttpRequest jettyRequest = (HttpRequest) httpClient.newRequest(finalRequest.getUri());
@@ -569,9 +583,9 @@ public class JettyHttpClient
     public String dumpAllDestinations()
     {
         return String.format("%s\t%s\t%s\t%s\t%s%n", "URI", "queued", "request", "wait", "response") +
-                httpClient.getDestinations().stream()
-                        .map(JettyHttpClient::dumpDestination)
-                        .collect(Collectors.joining("\n"));
+        httpClient.getDestinations().stream()
+        .map(JettyHttpClient::dumpDestination)
+        .collect(Collectors.joining("\n"));
     }
 
     // todo this should be @Managed but operations with parameters are broken in jmx utils https://github.com/martint/jmxutils/issues/27
@@ -590,17 +604,17 @@ public class JettyHttpClient
     {
         long now = System.nanoTime();
         return getRequestListenersForDestination(destination).stream()
-                .map(request -> dumpRequest(now, request))
-                .sorted()
-                .collect(Collectors.joining("\n"));
+        .map(request -> dumpRequest(now, request))
+        .sorted()
+        .collect(Collectors.joining("\n"));
     }
 
     private static List<JettyRequestListener> getRequestListenersForDestination(Destination destination)
     {
         return getRequestForDestination(destination).stream()
-                .map(request -> (JettyRequestListener) request.getAttributes().get(PLATFORM_STATS_KEY))
-                .filter(listener -> listener != null)
-                .collect(Collectors.toList());
+        .map(request -> (JettyRequestListener) request.getAttributes().get(PLATFORM_STATS_KEY))
+        .filter(listener -> listener != null)
+        .collect(Collectors.toList());
     }
 
     private static List<org.eclipse.jetty.client.api.Request> getRequestForDestination(Destination destination)
@@ -609,14 +623,14 @@ public class JettyHttpClient
         Queue<HttpExchange> httpExchanges = poolingHttpDestination.getHttpExchanges();
 
         List<org.eclipse.jetty.client.api.Request> requests = httpExchanges.stream()
-                .map(HttpExchange::getRequest)
-                .collect(Collectors.toList());
+        .map(HttpExchange::getRequest)
+        .collect(Collectors.toList());
 
         poolingHttpDestination.getConnectionPool().getActiveConnections().stream()
-                .filter(HttpConnectionOverHTTP.class::isInstance)
-                .map(connection -> ((HttpConnectionOverHTTP) connection).getHttpChannel().getHttpExchange())
-                .filter(exchange -> exchange != null)
-                .forEach(exchange -> requests.add(exchange.getRequest()));
+        .filter(HttpConnectionOverHTTP.class::isInstance)
+        .map(connection -> ((HttpConnectionOverHTTP) connection).getHttpChannel().getHttpExchange())
+        .filter(exchange -> exchange != null)
+        .forEach(exchange -> requests.add(exchange.getRequest()));
 
         return requests.stream().filter(request -> request != null).collect(Collectors.toList());
     }
@@ -641,11 +655,11 @@ public class JettyHttpClient
             finished = now;
         }
         return String.format("%s\t%.1f\t%.1f\t%.1f\t%.1f",
-                listener.getUri(),
-                nanosToMillis(requestStarted - created),
-                nanosToMillis(requestFinished - requestStarted),
-                nanosToMillis(responseStarted - requestFinished),
-                nanosToMillis(finished - responseStarted));
+            listener.getUri(),
+            nanosToMillis(requestStarted - created),
+            nanosToMillis(requestFinished - requestStarted),
+            nanosToMillis(responseStarted - requestFinished),
+            nanosToMillis(finished - responseStarted));
     }
 
     private static double nanosToMillis(long nanos)
@@ -670,8 +684,8 @@ public class JettyHttpClient
     public String toString()
     {
         return Objects.toStringHelper(this)
-                .addValue(name)
-                .toString();
+        .addValue(name)
+        .toString();
     }
 
     @SuppressWarnings("UnusedDeclaration")
@@ -681,7 +695,7 @@ public class JettyHttpClient
     }
 
     private static class JettyResponse
-            implements com.proofpoint.http.client.Response
+    implements com.proofpoint.http.client.Response
     {
         private final Response response;
         private final CountingInputStream inputStream;
@@ -740,16 +754,16 @@ public class JettyHttpClient
         public String toString()
         {
             return Objects.toStringHelper(this)
-                    .add("statusCode", getStatusCode())
-                    .add("statusMessage", getStatusMessage())
-                    .add("headers", getHeaders())
-                    .toString();
+            .add("statusCode", getStatusCode())
+            .add("statusMessage", getStatusMessage())
+            .add("headers", getHeaders())
+            .toString();
         }
     }
 
     private static class JettyResponseFuture<T, E extends Exception>
-            extends AbstractFuture<T>
-            implements HttpResponseFuture<T>
+    extends AbstractFuture<T>
+    implements HttpResponseFuture<T>
     {
         public enum JettyAsyncHttpState
         {
@@ -823,7 +837,7 @@ public class JettyHttpClient
         }
 
         private T processResponse(Response response, InputStream content)
-                throws E
+        throws E
         {
             // this time will not include the data fetching portion of the response,
             // since the response is fully cached in memory at this point
@@ -887,10 +901,10 @@ public class JettyHttpClient
         public String toString()
         {
             return Objects.toStringHelper(this)
-                    .add("requestStart", requestStart)
-                    .add("state", state)
-                    .add("request", request)
-                    .toString();
+            .add("requestStart", requestStart)
+            .add("state", state)
+            .add("request", request)
+            .toString();
         }
     }
 
@@ -904,11 +918,11 @@ public class JettyHttpClient
         Duration requestProcessingTime = new Duration(responseStart - requestStart, NANOSECONDS);
 
         requestStats.record(request.getMethod(),
-                response.getStatusCode(),
-                bytesWritten,
-                response.getBytesRead(),
-                requestProcessingTime,
-                responseProcessingTime);
+            response.getStatusCode(),
+            bytesWritten,
+            response.getBytesRead(),
+            requestProcessingTime,
+            responseProcessingTime);
     }
 
     private static class BodySourceInputStream extends InputStream
@@ -924,7 +938,7 @@ public class JettyHttpClient
 
         @Override
         public int read()
-                throws IOException
+        throws IOException
         {
             // We guarantee we don't call the int read() method of the delegate.
             throw new UnsupportedOperationException();
@@ -932,7 +946,7 @@ public class JettyHttpClient
 
         @Override
         public int read(byte[] b)
-                throws IOException
+        throws IOException
         {
             int read = delegate.read(b);
             if (read > 0) {
@@ -943,7 +957,7 @@ public class JettyHttpClient
 
         @Override
         public int read(byte[] b, int off, int len)
-                throws IOException
+        throws IOException
         {
             int read = delegate.read(b, off, len);
             if (read > 0) {
@@ -954,14 +968,14 @@ public class JettyHttpClient
 
         @Override
         public long skip(long n)
-                throws IOException
+        throws IOException
         {
             return delegate.skip(n);
         }
 
         @Override
         public int available()
-                throws IOException
+        throws IOException
         {
             return delegate.available();
         }
@@ -982,7 +996,7 @@ public class JettyHttpClient
 
         @Override
         public void reset()
-                throws IOException
+        throws IOException
         {
             // We guarantee we don't call this
             throw new UnsupportedOperationException();
@@ -996,7 +1010,7 @@ public class JettyHttpClient
     }
 
     private static class DynamicBodySourceContentProvider
-            implements ContentProvider
+    implements ContentProvider
     {
         private static final ByteBuffer DONE = ByteBuffer.allocate(0);
 
@@ -1034,7 +1048,7 @@ public class JettyHttpClient
         }
 
         private static class DynamicBodySourceOutputStream
-                extends OutputStream
+        extends OutputStream
         {
             private final Queue<ByteBuffer> chunks;
 
@@ -1066,7 +1080,7 @@ public class JettyHttpClient
         }
 
         private static class DynamicBodySourceIterator extends AbstractIterator<ByteBuffer>
-                implements Closeable
+        implements Closeable
         {
             private final Queue<ByteBuffer> chunks;
             private final Writer writer;
@@ -1119,7 +1133,7 @@ public class JettyHttpClient
     }
 
     private static class BufferingResponseListener
-            extends Listener.Adapter
+    extends Listener.Adapter
     {
         private final JettyResponseFuture<?, ?> future;
         private final int maxLength;
@@ -1405,7 +1419,7 @@ public class JettyHttpClient
     }
 
     private static class ConnectionPoolDistribution
-            extends CachedDistribution
+    extends CachedDistribution
     {
         interface Processor
         {
@@ -1417,18 +1431,18 @@ public class JettyHttpClient
             super(() -> {
                 Distribution distribution = new Distribution();
                 httpClient.getDestinations().stream()
-                        .filter(PoolingHttpDestination.class::isInstance)
-                        .map(destination -> (PoolingHttpDestination<?>) destination)
-                        .map(PoolingHttpDestination::getConnectionPool)
-                        .filter(pool -> pool != null)
-                        .forEach(pool -> processor.process(distribution, pool));
+                .filter(PoolingHttpDestination.class::isInstance)
+                .map(destination -> (PoolingHttpDestination<?>) destination)
+                .map(PoolingHttpDestination::getConnectionPool)
+                .filter(pool -> pool != null)
+                .forEach(pool -> processor.process(distribution, pool));
                 return distribution;
             });
         }
     }
 
     private static class DestinationDistribution
-            extends CachedDistribution
+    extends CachedDistribution
     {
         interface Processor
         {
@@ -1440,16 +1454,16 @@ public class JettyHttpClient
             super(() -> {
                 Distribution distribution = new Distribution();
                 httpClient.getDestinations().stream()
-                        .filter(PoolingHttpDestination.class::isInstance)
-                        .map(destination -> (PoolingHttpDestination<?>) destination)
-                        .forEach(destination -> processor.process(distribution, destination));
+                .filter(PoolingHttpDestination.class::isInstance)
+                .map(destination -> (PoolingHttpDestination<?>) destination)
+                .forEach(destination -> processor.process(distribution, destination));
                 return distribution;
             });
         }
     }
 
     private static class RequestDistribution
-            extends CachedDistribution
+    extends CachedDistribution
     {
         interface Processor
         {
@@ -1462,18 +1476,18 @@ public class JettyHttpClient
                 long now = System.nanoTime();
                 Distribution distribution = new Distribution();
                 httpClient.getDestinations().stream()
-                        .filter(PoolingHttpDestination.class::isInstance)
-                        .map(destination -> (PoolingHttpDestination<?>) destination)
-                        .map(JettyHttpClient::getRequestListenersForDestination)
-                        .flatMap(List::stream)
-                        .forEach(listener -> processor.process(distribution, listener, now));
+                .filter(PoolingHttpDestination.class::isInstance)
+                .map(destination -> (PoolingHttpDestination<?>) destination)
+                .map(JettyHttpClient::getRequestListenersForDestination)
+                .flatMap(List::stream)
+                .forEach(listener -> processor.process(distribution, listener, now));
                 return distribution;
             });
         }
     }
 
     private static class LimitQueuedToAvailableConnectionsHttpDestination
-            extends HttpDestinationOverHTTP
+    extends HttpDestinationOverHTTP
     {
         private final Object lock = new Object();
         private final int limit;
